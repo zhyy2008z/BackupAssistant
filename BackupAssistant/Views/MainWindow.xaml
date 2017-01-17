@@ -1,0 +1,157 @@
+﻿<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:prism="http://prismlibrary.com/"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:ins="http://schemas.microsoft.com/expression/2010/interactions"
+        mc:Ignorable="d"
+        x:Class="BackupAssistant.Views.MainWindow"
+        prism:ViewModelLocator.AutoWireViewModel="True"
+        Title="{Binding Title}"
+        DataContextChanged="Window_DataContextChanged"
+        Width="1033"
+        Height="639.5"
+        Icon="/BackupAssistant;component/backupIco.ico">
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Closing">
+            <ins:CallMethodAction TargetObject="{Binding}"
+                                  MethodName="Window_Closing"></ins:CallMethodAction>
+        </i:EventTrigger>
+        <i:EventTrigger EventName="Closed">
+            <ins:CallMethodAction TargetObject="{Binding}"
+                                  MethodName="Window_Closed"></ins:CallMethodAction>
+        </i:EventTrigger>
+        <i:EventTrigger EventName="Loaded">
+            <ins:CallMethodAction TargetObject="{Binding}"
+                                  MethodName="Window_Loaded"></ins:CallMethodAction>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
+    <DockPanel LastChildFill="True">
+        <StatusBar DockPanel.Dock="Bottom"
+                   Height="30">
+            <StatusBarItem>
+                <TextBlock Text="{Binding Status}"></TextBlock>
+            </StatusBarItem>
+            <StatusBarItem>
+                <ProgressBar Value="{Binding Progress}"
+                             Width="100"
+                             Height="15" />
+            </StatusBarItem>
+            <StatusBarItem></StatusBarItem>
+        </StatusBar>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition Height="30" />
+                <RowDefinition Height="2*" />
+                <RowDefinition Height="2*" />
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="30" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition Height="30" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Button Command="{Binding AddDirectoryCommand}"
+                            IsEnabled="{Binding CanStart}">
+                        <TextBlock Text="添加"
+                                   Width="20"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center" />
+                    </Button>
+                    <TextBlock Grid.Row="1"
+                               Text="&gt;&gt;"
+                               TextAlignment="Center"
+                               VerticalAlignment="Center" />
+                    <Button Grid.Row="2"
+                            IsEnabled="{Binding CanStart}"
+                            Command="{Binding DeleteDirectoryCommand}">
+                        <TextBlock TextWrapping="Wrap"
+                                   Width="20"
+                                   TextAlignment="Center"><Run Text="删除" /></TextBlock>
+                    </Button>
+                </Grid>
+                <ListBox ItemsSource="{Binding EditDirectories}"
+                         x:Name="ListBox1"
+                         IsEnabled="{Binding CanStart}"
+                         SelectedIndex="{Binding SelectedIndex}">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="HorizontalContentAlignment"
+                                    Value="Stretch"></Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding BackupFrom}">
+                                <TextBlock.InputBindings>
+                                    <MouseBinding MouseAction="LeftDoubleClick"
+                                                  Command="{Binding DataContext.EditDirectoryCommand,ElementName=ListBox1}" />
+                                </TextBlock.InputBindings></TextBlock>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                    <!--<i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseDoubleClick">
+                        <i:InvokeCommandAction Command="{Binding EditDirectoryCommand}"></i:InvokeCommandAction>
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>-->
+                </ListBox>
+                <ListBox Grid.Column="2"
+                         ItemsSource="{Binding EditDirectories}"
+                         SelectedIndex="{Binding SelectedIndex}"
+                         IsEnabled="{Binding CanStart}"
+                         DisplayMemberPath="BackupTo">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="MouseDoubleClick">
+                            <i:InvokeCommandAction Command="{Binding EditDirectoryCommand}"></i:InvokeCommandAction>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </ListBox>
+            </Grid>
+            <ToolBar Grid.Row="1">
+                <CheckBox Content="跳过符号链接"
+                          IsEnabled="{Binding CanStart}"
+                          IsChecked="{Binding SkipSymbolLink}" />
+                <Button Command="{Binding StartBackupCommand}"
+                        IsEnabled="{Binding CanStart}">开始备份</Button>
+                <Button Command="{Binding StopBackupCommand}"
+                        IsEnabled="{Binding CanStop}">停止备份</Button>
+                <Button Command="{Binding ClearConsoleCommand}"
+                        IsEnabled="{Binding CanStart}">清空输出</Button>
+                <Button Command="{Binding RebuildSelectedBackToDirectoryMetadataCommand}"
+                        IsEnabled="{Binding CanStart}">重建选中的备份到文件夹元数据</Button>
+                <Button Command="{Binding StartBackupSelectedCommand}"
+                        IsEnabled="{Binding CanStart}">备份当前选中的备份自文件夹</Button>
+            </ToolBar>
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <GroupBox                      Header="已添加">
+                    <ListBox ItemsSource="{Binding AddedInfo}" />
+                </GroupBox>
+                <GroupBox Grid.Column="1"
+                          Header="已替换">
+                    <ListBox ItemsSource="{Binding ReplacedInfo}" />
+                </GroupBox>
+                <GroupBox Grid.Column="2"
+                          Header="已删除">
+                    <ListBox ItemsSource="{Binding DeletedInfo}" />
+                </GroupBox>
+            </Grid>
+            <GroupBox Grid.Row="3"
+                      Header="日志输出">
+                <ListBox ItemsSource="{Binding LoggedInfo}" />
+            </GroupBox>
+        </Grid>
+    </DockPanel>
+</Window>
