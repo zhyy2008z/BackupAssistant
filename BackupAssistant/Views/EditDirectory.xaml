@@ -61,6 +61,7 @@
         <ListBox Grid.Row="2"
                  SelectedIndex="{Binding SelectedIndex}"
                  ItemsSource="{Binding DirectoryExcludes}"
+                 DisplayMemberPath="Path"
                  Grid.Column="1"></ListBox>
         <StackPanel Grid.Row="3"
                     Grid.Column="1"
