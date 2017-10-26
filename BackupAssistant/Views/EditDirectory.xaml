@@ -30,7 +30,7 @@
         <Style TargetType="Button"
                x:Key="ButtonStyle">
             <Setter Property="Margin"
-                    Value="10,0"></Setter>
+                    Value="5,0"></Setter>
             <Setter Property="Padding"
                     Value="10,0"></Setter>
         </Style>
@@ -64,10 +64,11 @@
                  Grid.Column="1"></ListBox>
         <StackPanel Grid.Row="3"
                     Grid.Column="1"
-                    HorizontalAlignment="Center"
                     Orientation="Horizontal"
                     VerticalAlignment="Center"
                     Height="25">
+            <TextBox Text="{Binding ExcludePath}" Width="250"></TextBox>
+            <CheckBox IsChecked="{Binding PartialPath}" VerticalAlignment="Center" Content="部分路径"></CheckBox>
             <Button Style="{StaticResource ButtonStyle}"
                     Command="{Binding AddExcludeDirectoryCommand}">添加</Button>
             <Button Style="{StaticResource ButtonStyle}"

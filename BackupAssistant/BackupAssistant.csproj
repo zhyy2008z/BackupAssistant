@@ -114,8 +114,11 @@
     </Compile>
     <Compile Include="Models\InfoEventArgs.cs" />
     <Compile Include="Models\ProgressReportEventArgs.cs" />
+    <Compile Include="Utilities\SymbolicLink.cs" />
+    <Compile Include="Utilities\SymbolicLinkReparseData.cs" />
     <Compile Include="Utilities\Volumes.cs" />
     <Compile Include="Entities\Volume.cs" />
+    <Compile Include="ViewModels\ExcludeDiretoryViewModel.cs" />
     <Compile Include="Win32Window.cs" />
     <Page Include="UserControls\DirectorySelector.xaml">
       <SubType>Designer</SubType>

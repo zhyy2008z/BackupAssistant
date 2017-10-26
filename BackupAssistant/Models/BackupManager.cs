@@ -14,6 +14,9 @@ using ZetaLongPaths.Native;
 
 namespace BackupAssistant.Models
 {
+    using Utilities;
+    using ViewModels;
+
     /// <summary>
     /// 备份功能实现类
     /// </summary>
@@ -138,7 +141,11 @@ namespace BackupAssistant.Models
             OnInfoLogged(new InfoEventArgs("【错误】" + message + "【Exception】" + ex.Message));
         }
 
-        void backupFolderToFolder(ViewModels.EditDirectoryViewModel viewModel)
+        /// <summary>
+        /// 配置一个备份设置条目，并启动备份过程
+        /// </summary>
+        /// <param name="viewModel"></param>
+        void backupFolderToFolder(EditDirectoryViewModel viewModel)
         {
             _currentTaskBackupFileCount = 0;
             //分析备份到文件夹当前文件情况
@@ -151,7 +158,7 @@ namespace BackupAssistant.Models
             var backupFromDirectory = new ZlpDirectoryInfo(viewModel.BackupFrom);
 
             //备份自是符号链接
-            if (_skipSymbolLink && backupFromDirectory.Attributes.HasFlag(FileAttributes.ReparsePoint))
+            if (_skipSymbolLink && backupFromDirectory.Attributes.HasFlag(FileAttributes.ReparsePoint) && SymbolicLink.GetTarget(backupFromDirectory.FullName) != null)
             {
                 OnInfoLogged(new InfoEventArgs($"备份自【{viewModel.BackupFrom}】是符号链接，已跳过"));
                 return;
@@ -208,18 +215,38 @@ namespace BackupAssistant.Models
             }
 
             List<string> excludeDirectories = null;
+            List<string> excludePartialPaths = null;
             foreach (var item in viewModel.DirectoryExcludes)
-                if (item.Equals(viewModel.BackupFrom, StringComparison.CurrentCultureIgnoreCase))
+            {
+                if (item.PartialPath)
                 {
-                    OnInfoLogged(new InfoEventArgs($"备份自【{viewModel.BackupFrom}】在排除列表中，已跳过"));
-                    return;
+                    if (System.IO.Path.GetFileName(viewModel.BackupFrom).Equals(item.Path, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        OnInfoLogged(new InfoEventArgs($"备份自【{viewModel.BackupFrom}】在排除列表中，已跳过"));
+                        return;
+                    }
+                    else
+                    {
+                        if (excludePartialPaths == null)
+                            excludePartialPaths = new List<string>();
+                        excludePartialPaths.Add(item.Path);
+                    }
                 }
-                else if (item.StartsWith(viewModel.BackupFrom, StringComparison.CurrentCultureIgnoreCase))
+                else
                 {
-                    if (excludeDirectories == null)
-                        excludeDirectories = new List<string>();
-                    excludeDirectories.Add(item);
+                    if (item.Path.Equals(viewModel.BackupFrom, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        OnInfoLogged(new InfoEventArgs($"备份自【{viewModel.BackupFrom}】在排除列表中，已跳过"));
+                        return;
+                    }
+                    else if (item.Path.StartsWith(viewModel.BackupFrom, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        if (excludeDirectories == null)
+                            excludeDirectories = new List<string>();
+                        excludeDirectories.Add(item.Path);
+                    }
                 }
+            }
 
             OnInfoLogged(new InfoEventArgs($"正在统计【{viewModel.BackupFrom}】需要备份文件数量"));
             //计算总计需要备份的文件数量
@@ -229,7 +256,7 @@ namespace BackupAssistant.Models
 
             OnInfoLogged(new InfoEventArgs($"正在备份【{viewModel.BackupFrom}】中..."));
 
-            backup(backupFromDirectory, metaData, viewModel.BackupTo, innerFiles, excludeDirectories);
+            backup(backupFromDirectory, metaData, viewModel.BackupTo, innerFiles, excludeDirectories, excludePartialPaths);
 
             //保存文件元数据
             OnInfoLogged(new InfoEventArgs($"正在保存备份到文件夹【{viewModel.BackupTo}】元数据"));
@@ -256,12 +283,12 @@ namespace BackupAssistant.Models
             _currentTaskTotalFileCount += files.Length;
 
             foreach (var di in directoryInfo.GetDirectories())
-                if (!_skipSymbolLink || !di.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                if (!_skipSymbolLink || !(di.Attributes.HasFlag(FileAttributes.ReparsePoint) && SymbolicLink.GetTarget(di.FullName) != null))
                     calcTaskTotalFileCount(di);
 
         }
 
-        private void backup(ZlpDirectoryInfo directoryInfo, MyDirectory myDirectory, string containerDir, ZlpFileInfo[] files, List<string> excludeDirectories)
+        private void backup(ZlpDirectoryInfo directoryInfo, MyDirectory myDirectory, string containerDir, ZlpFileInfo[] files, List<string> excludeDirectories, List<string> excludePartialPaths)
         {
             //备份文件
             List<string> fileNames = new List<string>();
@@ -336,14 +363,24 @@ namespace BackupAssistant.Models
             foreach (var directory in directoryInfo.GetDirectories())
             {
                 //跳过符号链接
-                if (_skipSymbolLink && directory.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                if (_skipSymbolLink && directory.Attributes.HasFlag(FileAttributes.ReparsePoint) && SymbolicLink.GetTarget(directory.FullName) != null)
                 {
                     OnInfoLogged(new InfoEventArgs($"已跳过符号链接【{directory.FullName}】"));
                     continue;
                 }
 
-                List<string> subExcludeDirectories = null;
+                //判断部分匹配排除列表
+                if (excludePartialPaths != null)
+                    foreach (var item in excludePartialPaths)
+                    {
+                        if (item.Equals(directory.Name, StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            OnInfoLogged(new InfoEventArgs($"备份文件夹【{directory.FullName}】在排除列表中，已跳过"));
+                            goto outer;
+                        }
+                    }
 
+                List<string> subExcludeDirectories = null;
                 //判断排除列表
                 if (excludeDirectories != null)
                     foreach (var item in excludeDirectories)
@@ -385,7 +422,7 @@ namespace BackupAssistant.Models
 
                 directoryNames.Add(directory.Name);
 
-                backup(directory, bkToDirectory, ZlpPathHelper.Combine(containerDir, bkToDirectory.Name), innerFiles, subExcludeDirectories);
+                backup(directory, bkToDirectory, ZlpPathHelper.Combine(containerDir, bkToDirectory.Name), innerFiles, subExcludeDirectories, excludePartialPaths);
 
                 outer:; //用于跳出本次循环
             }
