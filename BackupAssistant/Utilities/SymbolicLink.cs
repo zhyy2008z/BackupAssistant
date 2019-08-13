@@ -26,6 +26,11 @@ namespace BackupAssistant.Utilities
 
         const uint SymLinkTag = 0xA000000C;
 
+        /// <summary>
+        /// Reparse point tag used to identify mount points and junction points.
+        /// </summary>
+        private const uint IO_REPARSE_TAG_MOUNT_POINT = 0xA0000003;
+
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern SafeFileHandle CreateFile(
             string lpFileName,
@@ -95,7 +100,7 @@ namespace BackupAssistant.Utilities
                     Marshal.FreeHGlobal(outBuffer);
                 }
             }
-            if (reparseDataBuffer.ReparseTag != SymLinkTag)
+            if (reparseDataBuffer.ReparseTag != SymLinkTag && reparseDataBuffer.ReparseTag!= IO_REPARSE_TAG_MOUNT_POINT)
             {
                 return null;
             }
