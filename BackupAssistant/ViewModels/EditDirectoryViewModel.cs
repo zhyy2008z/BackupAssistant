@@ -94,5 +94,12 @@ namespace BackupAssistant.ViewModels
 
         bool _partialPath;
         public bool PartialPath { get { return _partialPath; } set { SetProperty(ref _partialPath, value); } }
+
+        bool _isPreserveExcludePath;
+        public bool IsPreserveExcludePath
+        {
+            get { return _isPreserveExcludePath; }
+            set { SetProperty(ref _isPreserveExcludePath, value); }
+        }
     }
 }

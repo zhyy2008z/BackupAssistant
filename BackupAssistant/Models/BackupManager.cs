@@ -168,7 +168,7 @@ namespace BackupAssistant.Models
             ZlpFileInfo[] innerFiles;
             try
             {
-                innerFiles = backupFromDirectory.GetFiles();
+                innerFiles = backupFromDirectory.GetFiles().Where(zfi => zfi.Name != MetaData).ToArray(); //不要备份元数据文件
             }
             catch (Exception ex)
             {
@@ -256,7 +256,7 @@ namespace BackupAssistant.Models
 
             OnInfoLogged(new InfoEventArgs($"正在备份【{viewModel.BackupFrom}】中..."));
 
-            backup(backupFromDirectory, metaData, viewModel.BackupTo, innerFiles, excludeDirectories, excludePartialPaths);
+            backup(viewModel, backupFromDirectory, metaData, viewModel.BackupTo, innerFiles, excludeDirectories, excludePartialPaths);
 
             //保存文件元数据
             OnInfoLogged(new InfoEventArgs($"正在保存备份到文件夹【{viewModel.BackupTo}】元数据"));
@@ -288,7 +288,7 @@ namespace BackupAssistant.Models
 
         }
 
-        private void backup(ZlpDirectoryInfo directoryInfo, MyDirectory myDirectory, string containerDir, ZlpFileInfo[] files, List<string> excludeDirectories, List<string> excludePartialPaths)
+        private void backup(EditDirectoryViewModel viewModel, ZlpDirectoryInfo directoryInfo, MyDirectory myDirectory, string containerDir, ZlpFileInfo[] files, List<string> excludeDirectories, List<string> excludePartialPaths)
         {
             //备份文件
             List<string> fileNames = new List<string>();
@@ -375,6 +375,8 @@ namespace BackupAssistant.Models
                     {
                         if (item.Equals(directory.Name, StringComparison.CurrentCultureIgnoreCase))
                         {
+                            if (viewModel.IsPreserveExcludePath)
+                                directoryNames.Add(directory.Name);
                             OnInfoLogged(new InfoEventArgs($"备份文件夹【{directory.FullName}】在排除列表中，已跳过"));
                             goto outer;
                         }
@@ -387,6 +389,8 @@ namespace BackupAssistant.Models
                         if (item.Equals(directory.FullName, StringComparison.CurrentCultureIgnoreCase))
                         {
                             OnInfoLogged(new InfoEventArgs($"备份文件夹【{directory.FullName}】在排除列表中，已跳过"));
+                            if (viewModel.IsPreserveExcludePath)
+                                directoryNames.Add(directory.Name);
                             goto outer;
                         }
                         else if (item.StartsWith(directory.FullName, StringComparison.CurrentCultureIgnoreCase))
@@ -422,9 +426,9 @@ namespace BackupAssistant.Models
 
                 directoryNames.Add(directory.Name);
 
-                backup(directory, bkToDirectory, ZlpPathHelper.Combine(containerDir, bkToDirectory.Name), innerFiles, subExcludeDirectories, excludePartialPaths);
+                backup(viewModel, directory, bkToDirectory, ZlpPathHelper.Combine(containerDir, bkToDirectory.Name), innerFiles, subExcludeDirectories, excludePartialPaths);
 
-                outer:; //用于跳出本次循环
+            outer:; //用于跳出本次循环
             }
 
             //评估删除文件夹

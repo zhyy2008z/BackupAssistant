@@ -8,7 +8,7 @@
         x:Class="BackupAssistant.Views.EditDirectory"
         prism:ViewModelLocator.AutoWireViewModel="True"
         Width="566"
-        Height="328"
+        Height="331.551"
         ResizeMode="NoResize"
         WindowStyle="ToolWindow"
         DataContextChanged="Window_DataContextChanged"
@@ -41,6 +41,7 @@
             <RowDefinition />
             <RowDefinition Height="3*" />
             <RowDefinition />
+            <RowDefinition></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="100" />
@@ -63,17 +64,25 @@
                  ItemsSource="{Binding DirectoryExcludes}"
                  DisplayMemberPath="Path"
                  Grid.Column="1"></ListBox>
-        <StackPanel Grid.Row="3"
+        <CheckBox VerticalAlignment="Center"
+                  Grid.Row="3"
+                  Grid.Column="1"
+                  IsChecked="{Binding IsPreserveExcludePath}">是否保留排除列表中已存在文件</CheckBox>
+        <StackPanel Grid.Row="4"
                     Grid.Column="1"
                     Orientation="Horizontal"
                     VerticalAlignment="Center"
                     Height="25">
-            <TextBox Text="{Binding ExcludePath}" Width="250"></TextBox>
-            <CheckBox IsChecked="{Binding PartialPath}" VerticalAlignment="Center" Content="部分路径"></CheckBox>
+            <TextBox Text="{Binding ExcludePath}"
+                     Width="250"></TextBox>
+            <CheckBox IsChecked="{Binding PartialPath}"
+                      VerticalAlignment="Center"
+                      Content="部分路径"></CheckBox>
             <Button Style="{StaticResource ButtonStyle}"
                     Command="{Binding AddExcludeDirectoryCommand}">添加</Button>
             <Button Style="{StaticResource ButtonStyle}"
                     Command="{Binding DeleteExcludeDirectoryCommand}">删除</Button>
         </StackPanel>
+
     </Grid>
 </Window>
